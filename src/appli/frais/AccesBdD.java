@@ -1,4 +1,5 @@
 package appli.frais;
+
 import java.sql.*;
 import java.util.UUID;
 import java.util.logging.Level;
@@ -10,17 +11,15 @@ import java.util.logging.Logger;
  * <p>
  * Cette classe assure :
  * <ul>
- *   <li>La connexion à la base de données</li>
- *   <li>La lecture des informations des utilisateurs</li>
- *   <li>L’ajout, la modification et la suppression d’utilisateurs</li>
- *   <li>La récupération des rôles et des logins</li>
- *   <li>La génération automatique de logins et de mots de passe uniques</li>
+ * <li>La connexion à la base de données</li>
+ * <li>La lecture des informations des utilisateurs</li>
+ * <li>L’ajout, la modification et la suppression d’utilisateurs</li>
+ * <li>La récupération des rôles et des logins</li>
+ * <li>La génération automatique de logins et de mots de passe uniques</li>
  * </ul>
- * 
- * <p>Elle constitue la couche d’accès aux données du projet.</p>
- * 
- * @author ebernard
- * @version 1.0
+ * * <p>Elle constitue la couche d’accès aux données du projet.</p>
+ * * @author ebernard
+ * @version 1.1
  */
 public class AccesBdD {
 
@@ -46,14 +45,13 @@ public class AccesBdD {
         try {
             this.connexion = DriverManager.getConnection(dbURL, username, password);
         } catch (SQLException ex) {
-            Logger.getLogger(AccesBdD.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(AccesBdD.class.getName()).log(Level.SEVERE, "Échec de la connexion", ex);
         }
     }
 
     /**
      * Retourne la connexion active à la base de données.
-     * 
-     * @return Objet {@link Connection} actuellement ouvert
+     * * @return Objet {@link Connection} actuellement ouvert
      */
     public Connection getConnexion() {
         return connexion;
@@ -61,14 +59,14 @@ public class AccesBdD {
 
     /**
      * Récupère l’ensemble des utilisateurs présents dans la table {@code visiteur}.
-     * 
-     * @return Un {@link ResultSet} contenant tous les utilisateurs, ou {@code null} en cas d’erreur
+     * * @return Un {@link ResultSet} contenant tous les utilisateurs, ou {@code null} en cas d’erreur
      */
     public ResultSet getLesUtilisateurs() {
         try {
             String sql = "SELECT * FROM visiteur;";
             PreparedStatement statement = connexion.prepareStatement(sql);
-            return statement.executeQuery(sql);
+            // CORRECTION : On n'envoie pas la chaîne sql dans executeQuery() pour un PreparedStatement
+            return statement.executeQuery();
         } catch (SQLException ex) {
             Logger.getLogger(AccesBdD.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -76,10 +74,9 @@ public class AccesBdD {
     }
 
     /**
-     * Recherche un utilisateur par son identifiant (ID).
-     * 
-     * @param idUtil Identifiant (ID) de l’utilisateur recherché
-     * @return Un {@link ResultSet} contenant le ou les utilisateurs correspondants, ou {@code null} en cas d’erreur
+     * Recherche un utilisateur par son identifiant (ID) via une recherche partielle (LIKE).
+     * * @param idUtil Identifiant (ID) de l’utilisateur recherché
+     * @return Un {@link ResultSet} contenant les résultats, ou {@code null} en cas d’erreur
      */
     public ResultSet getLesUtilisateursUnId(String idUtil) {
         try {
@@ -94,10 +91,9 @@ public class AccesBdD {
     }
 
     /**
-     * Recherche un utilisateur par son nom.
-     * 
-     * @param nom Nom de l’utilisateur recherché
-     * @return Un {@link ResultSet} contenant le ou les utilisateurs correspondants, ou {@code null} en cas d’erreur
+     * Recherche un utilisateur par son nom via une recherche partielle (LIKE).
+     * * @param nom Nom de l’utilisateur recherché
+     * @return Un {@link ResultSet} contenant les résultats, ou {@code null} en cas d’erreur
      */
     public ResultSet getLesUtilisateursUnNom(String nom) {
         try {
@@ -113,14 +109,14 @@ public class AccesBdD {
 
     /**
      * Récupère la liste de tous les logins existants dans la table {@code visiteur}.
-     * 
-     * @return Un {@link ResultSet} contenant les logins, ou {@code null} en cas d’erreur
+     * * @return Un {@link ResultSet} contenant les logins, ou {@code null} en cas d’erreur
      */
     public ResultSet getLesLogins() {
         try {
             String sql = "SELECT login FROM visiteur;";
             PreparedStatement statement = connexion.prepareStatement(sql);
-            return statement.executeQuery(sql);
+            // CORRECTION : executeQuery() sans paramètre pour PreparedStatement
+            return statement.executeQuery();
         } catch (SQLException ex) {
             Logger.getLogger(AccesBdD.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -129,8 +125,7 @@ public class AccesBdD {
 
     /**
      * Ajoute un nouvel utilisateur dans la table {@code visiteur}.
-     * 
-     * @param id Identifiant unique de l’utilisateur
+     * * @param id Identifiant unique de l’utilisateur
      * @param nom Nom de famille
      * @param prenom Prénom
      * @param login Login unique
@@ -138,8 +133,8 @@ public class AccesBdD {
      * @param adresse Adresse postale
      * @param cp Code postal
      * @param ville Ville
-     * @param dateEmbauche Date d’embauche
-     * @return 1 si l’ajout a réussi, -1 en cas d’échec
+     * @param dateEmbauche Date d’embauche au format {@link java.sql.Date}
+     * @return 1 si l’ajout a réussi, -1 en cas d’échec {@link SQLException}
      */
     public int ajoutUtilisateurs(String id, String nom, String prenom, String login, String mdp,
                                  String adresse, String cp, String ville, Date dateEmbauche) {
@@ -160,73 +155,69 @@ public class AccesBdD {
 
             return statement.executeUpdate();
         } catch (SQLException ex) {
-            Logger.getLogger(AccesBdD.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(AccesBdD.class.getName()).log(Level.SEVERE, "Erreur lors de l'ajout", ex);
         }
         return -1;
     }
 
     /**
      * Supprime un utilisateur de la table {@code visiteur} selon son identifiant.
-     * 
-     * @param idUtil Identifiant de l’utilisateur à supprimer
-     * @return Le nombre de lignes supprimées (0 si échec)
+     * * @param idUtil Identifiant (String) de l’utilisateur à supprimer
+     * @return Le nombre de lignes supprimées (0 si aucun utilisateur trouvé ou échec)
      */
-    public int supprimerUtilisateur(int idUtil) {
+    public int supprimerUtilisateur(String idUtil) { // CORRECTION : Passage en String pour cohérence
         String sql = "DELETE FROM visiteur WHERE id = ?";
         try (PreparedStatement statement = connexion.prepareStatement(sql)) {
-            statement.setInt(1, idUtil);
+            statement.setString(1, idUtil);
             return statement.executeUpdate();
         } catch (SQLException ex) {
-            Logger.getLogger(AccesBdD.class.getName()).log(Level.SEVERE, "Erreur lors de la suppression de l'utilisateur", ex);
+            Logger.getLogger(AccesBdD.class.getName()).log(Level.SEVERE, "Erreur lors de la suppression", ex);
         }
         return 0;
     }
 
     /**
      * Met à jour les informations d’un utilisateur existant dans la table {@code visiteur}.
-     * 
-     * @param id Identifiant unique
-     * @param nom Nom de famille
-     * @param prenom Prénom
-     * @param login Login de connexion
-     * @param adresse Adresse postale
-     * @param cp Code postal
-     * @param ville Ville
-     * @param dateEmbauche Date d’embauche
-     * @return Le nombre de lignes modifiées (0 si aucune modification)
+     * * @param id Identifiant unique de l'utilisateur à modifier
+     * @param nom Nouveau nom de famille
+     * @param prenom Nouveau prénom
+     * @param login Nouveau login
+     * @param adresse Nouvelle adresse postale
+     * @param cp Nouveau code postal
+     * @param ville Nouvelle ville
+     * @param dateEmbauche Nouvelle date d’embauche
+     * @return Le nombre de lignes modifiées (0 si aucune modification ou ID introuvable)
      */
     public int modifUtilisateur(String id, String nom, String prenom,
-                                String login, String adresse, String cp, String ville, Date dateEmbauche){
+                                 String login, String adresse, String cp, String ville, Date dateEmbauche){
         try {
             String sql = "UPDATE visiteur SET "
-                    + " id = ?, nom = ?, prenom = ?, login = ?, "
+                    + " nom = ?, prenom = ?, login = ?, "
                     + " adresse = ?, cp = ?, ville = ?, dateEmbauche = ? "
                     + " WHERE id = ?;";
 
             PreparedStatement statement = connexion.prepareStatement(sql);
-            statement.setString(1, id);
-            statement.setString(2, nom);
-            statement.setString(3, prenom);
-            statement.setString(4, login);
-            statement.setString(5, adresse);
-            statement.setString(6, cp);
-            statement.setString(7, ville);
-            statement.setDate(8, dateEmbauche);
-            statement.setString(9, id); 
+            statement.setString(1, nom);
+            statement.setString(2, prenom);
+            statement.setString(3, login);
+            statement.setString(4, adresse);
+            statement.setString(5, cp);
+            statement.setString(6, ville);
+            statement.setDate(7, dateEmbauche);
+            statement.setString(8, id); 
 
             return statement.executeUpdate();
         } catch (SQLException ex) {
-            Logger.getLogger(AccesBdD.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(AccesBdD.class.getName()).log(Level.SEVERE, "Erreur lors de la modification", ex);
         }
         return 0;
     }
 
     /**
-     * Récupère le rôle d’un utilisateur autorisé à partir de son identifiant et de son mot de passe.
-     * 
-     * @param identifiantUtil Identifiant de l’utilisateur autorisé
+     * Récupère le rôle d’un utilisateur autorisé à partir de ses identifiants.
+     * * @param identifiantUtil Login de l’utilisateur autorisé
      * @param mdp Mot de passe associé
-     * @return Un {@link ResultSet} contenant le rôle correspondant, ou {@code null} en cas d’erreur
+     * @return Un {@link ResultSet} contenant le rôle, ou {@code null} en cas d’erreur
      */
     public ResultSet getRole(String identifiantUtil, String mdp){
         try {
@@ -242,18 +233,18 @@ public class AccesBdD {
     }
 
     /**
-     * Génère automatiquement un login unique à partir du nom et prénom d’un utilisateur.
-     * 
-     * @param nom Nom de famille
+     * Génère automatiquement un login unique à partir du nom et prénom.
+     * * @param nom Nom de famille
      * @param prenom Prénom
-     * @return Un login unique non présent dans la base
+     * @return Un login unique (ex: pnom)
+     * @throws IllegalArgumentException si le nom ou le prénom sont vides
      */
     public String genererLoginUnique(String nom, String prenom) {
         nom = (nom != null) ? nom.trim().toLowerCase() : "";
         prenom = (prenom != null) ? prenom.trim().toLowerCase() : "";
 
         if (nom.isEmpty() || prenom.isEmpty()) {
-            throw new IllegalArgumentException("Nom et prénom doivent être renseignés pour générer un login.");
+            throw new IllegalArgumentException("Nom et prénom doivent être renseignés.");
         }
 
         String baseLogin = prenom.substring(0, 1) + nom;
@@ -269,9 +260,8 @@ public class AccesBdD {
     }
 
     /**
-     * Génère un mot de passe aléatoire de 5 caractères basé sur un UUID.
-     * 
-     * @return Un mot de passe court et pseudo-aléatoire
+     * Génère un mot de passe aléatoire de 5 caractères.
+     * * @return Un mot de passe court (5 caractères)
      */
     public String genererMotDePasse() {
         return UUID.randomUUID().toString().replaceAll("-", "").substring(0, 5);
@@ -279,8 +269,7 @@ public class AccesBdD {
 
     /**
      * Vérifie si un login existe déjà dans la table {@code visiteur}.
-     * 
-     * @param login Login à vérifier
+     * * @param login Login à vérifier
      * @return {@code true} si le login existe déjà, sinon {@code false}
      */
     public boolean loginExiste(String login) {
@@ -293,26 +282,21 @@ public class AccesBdD {
                 return rs.getInt(1) > 0;
             }
         } catch (SQLException e) {
-            Logger.getLogger(AccesBdD.class.getName()).log(Level.SEVERE, "Erreur lors de la vérification du login", e);
+            Logger.getLogger(AccesBdD.class.getName()).log(Level.SEVERE, "Erreur vérification login", e);
         }
         return false;
     }
     
     /**
-    * Vérifie si un utilisateur existe déjà dans la base de données {@code visiteur}
-    * en comparant les champs nom, prénom, adresse, code postal, ville et date d'embauche.
-    * <p>
-    * Cette méthode permet d'éviter les doublons d'utilisateurs lors de l'ajout.
-    * Elle utilise une requête SQL préparée pour garantir la sécurité contre les injections.
-    *
-    * @param nom           Le nom de l'utilisateur à vérifier
-    * @param prenom        Le prénom de l'utilisateur à vérifier
-    * @param adresse       L'adresse postale de l'utilisateur
-    * @param cp            Le code postal de l'utilisateur
-    * @param ville         La ville de résidence de l'utilisateur
-    * @param dateEmbauche  La date d'embauche de l'utilisateur
-    * @return {@code true} si un utilisateur avec ces informations existe déjà, {@code false} sinon
-    */
+     * Vérifie si un utilisateur existe déjà dans la base (doublon d'identité).
+     * * @param nom           Le nom à vérifier
+     * @param prenom        Le prénom à vérifier
+     * @param adresse       L'adresse postale
+     * @param cp            Le code postal
+     * @param ville         La ville
+     * @param dateEmbauche  La date d'embauche
+     * @return {@code true} si un doublon exact existe, {@code false} sinon
+     */
     public boolean utilisateurExiste(String nom, String prenom, String adresse, String cp, String ville, Date dateEmbauche) {
         String sql = "SELECT COUNT(*) FROM visiteur WHERE nom = ? AND prenom = ? AND adresse = ? AND cp = ? AND ville = ? AND dateEmbauche = ?";
         try (PreparedStatement stmt = connexion.prepareStatement(sql)) {
@@ -325,34 +309,27 @@ public class AccesBdD {
             ResultSet rs = stmt.executeQuery();
             return rs.next() && rs.getInt(1) > 0;
         } catch (SQLException ex) {
-            Logger.getLogger(AccesBdD.class.getName()).log(Level.SEVERE, "Erreur lors de la vérification de l'utilisateur", ex);
+            Logger.getLogger(AccesBdD.class.getName()).log(Level.SEVERE, "Erreur vérification utilisateur", ex);
         }
         return false;
     }
     
     /**
-    * Vérifie si un utilisateur est autorisé à accéder à l'application.
-    * <p>
-    * Cette méthode interroge la base de données pour savoir si un enregistrement
-    * correspondant à l'identifiant fourni existe dans la table {@code utilisateurautorise}.
-    * Elle retourne {@code true} si l'utilisateur est présent, {@code false} sinon.
-    * </p>
-    *
-    * @param login L'identifiant de l'utilisateur à vérifier.
-    * @return {@code true} si l'utilisateur est autorisé, {@code false} sinon.
-    */
+     * Vérifie si un utilisateur est présent dans la table des utilisateurs autorisés.
+     * * @param login L'identifiant (login) à vérifier.
+     * @return {@code true} si l'utilisateur est présent dans {@code utilisateurautorise}, {@code false} sinon.
+     */
     public boolean estUtilisateurAuthentifie(String login) {
-        try (PreparedStatement ps = connexion.prepareStatement(
-            "SELECT COUNT(*) FROM utilisateurautorise WHERE identifiantUtil = ?")) {
+        String sql = "SELECT COUNT(*) FROM utilisateurautorise WHERE identifiantUtil = ?";
+        try (PreparedStatement ps = connexion.prepareStatement(sql)) {
             ps.setString(1, login);
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
                 return rs.getInt(1) > 0;
             }
         } catch (SQLException ex) {
-            Logger.getLogger(AccesBdD.class.getName()).log(Level.SEVERE, "Erreur lors de la vérification de l'utilisateur", ex);
+            Logger.getLogger(AccesBdD.class.getName()).log(Level.SEVERE, "Erreur authentification", ex);
         }
         return false;
     }
-
 }
